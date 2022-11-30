@@ -5,7 +5,7 @@
 
 
 
-#define IR_THRESHOLD 				32000			//IR阈值
+#define IR_THRESHOLD 				10000			//IR阈值
 
 
 

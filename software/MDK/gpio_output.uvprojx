@@ -339,7 +339,7 @@
               <MiscControls>--diag_suppress=186,66,188</MiscControls>
               <Define>__DEBUG,HC32F460,USE_DEVICE_DRIVER_LIB</Define>
               <Undefine></Undefine>
-              <IncludePath>..\common;..\driver\inc;..\include;..\source;..\FreeRTOS\include;..\FreeRTOS\port\RVDS\ARM_CM4F;..\..\Oximeter</IncludePath>
+              <IncludePath>..\common;..\driver\inc;..\include;..\source;..\FreeRTOS\include;..\FreeRTOS\port\RVDS\ARM_CM4F;..\..\software</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>

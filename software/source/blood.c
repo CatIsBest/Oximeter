@@ -1,4 +1,11 @@
 
+/*******************************************************************************
+ * @file 	 		blood.c
+ * @author  	日常里的奇迹	@bilibili
+ * @date    	2022-11-26
+ * @brief			血氧心率算法
+********************************************************************************/
+
 #include "blood.h"
 #include "MAX30102.h"
 #include "math.h"
@@ -92,16 +99,16 @@ static float Find_Melia(uint16_t * buffer,uint16_t num,uint16_t threshold)
 								num 数据个数
  * @return    	uint16_t 最大值
   ********************************************************************/
-static uint16_t Find_Max(uint16_t * buffer,uint16_t num)
-{
-	uint16_t max = buffer[0];
-	for(uint16_t i = 1;i < num;i++)
-	{
-		if(max < buffer[i])
-			max = buffer[i];
-	}
-	return max;
-}
+//static uint16_t Find_Max(uint16_t * buffer,uint16_t num)
+//{
+//	uint16_t max = buffer[0];
+//	for(uint16_t i = 1;i < num;i++)
+//	{
+//		if(max < buffer[i])
+//			max = buffer[i];
+//	}
+//	return max;
+//}
 
 /**********************************************************************
  * @brief 	 		通过过零点计算心率，计算之前需要把把缓冲区信号处理为交流信号
@@ -160,7 +167,7 @@ static float Heart_Rate_Process(void)
 }
 
 /**********************************************************************
- * @brief 	 		用于中位数滤波，取5个点做中位数滤波
+ * @brief 	 		取5个点做中值数滤波
  * @parameter  	buffer 缓冲区指针
 								center_index 缓冲区数据索引
  * @return    	float 滤波后的值
@@ -200,7 +207,7 @@ static float Median_Filter(float * buffer,uint16_t center_index)
 }
 
 /**********************************************************************
-	* @brief 	 		对缓冲区做中位数滤波
+	* @brief 	 		对缓冲区做中值滤波
  * @parameter  	
  * @return    	
   ********************************************************************/

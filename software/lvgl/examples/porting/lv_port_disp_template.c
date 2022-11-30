@@ -7,7 +7,7 @@
  * @file 	 		lv_port_disp_templ.c
  * @author  	日常里的奇迹	@bilibili
  * @date    	2022-11-24
- * @brief			0.96寸 SPI-OLED 与LVGL接口 （待优化）
+ * @brief			0.96寸 SPI-OLED 与LVGL接口 
 ********************************************************************************/
 
 /*Copy this file as "lv_port_disp.c" and set this value to "1" to enable content*/
@@ -54,7 +54,8 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
 /**********************
  *  STATIC VARIABLES
  **********************/
-
+	//图像缓存
+	static uint8_t image_buffer[MY_DISP_HOR_RES][MY_DISP_VER_RES/8];
 /**********************
  *      MACROS
  **********************/
@@ -97,8 +98,8 @@ void lv_port_disp_init(void)
 
     /* Example for 1) */
     static lv_disp_draw_buf_t draw_buf_dsc_1;
-    static lv_color_t buf_1[MY_DISP_HOR_RES * 32];                          /*A buffer for 32 rows*/
-    lv_disp_draw_buf_init(&draw_buf_dsc_1, buf_1, NULL, MY_DISP_HOR_RES * 32);   /*Initialize the display buffer*/
+    static lv_color_t buf_1[MY_DISP_HOR_RES * MY_DISP_VER_RES];                          /*A buffer for 32 rows*/
+    lv_disp_draw_buf_init(&draw_buf_dsc_1, buf_1, NULL, MY_DISP_HOR_RES * MY_DISP_VER_RES);   /*Initialize the display buffer*/
 
     /* Example for 2) */
 //    static lv_disp_draw_buf_t draw_buf_dsc_2;
@@ -153,6 +154,14 @@ static void disp_init(void)
 {
 	/*You code here*/
 	LCD_Init();
+	
+	for(uint32_t i = 0;i < MY_DISP_VER_RES / 8;i++)
+	{
+		for(uint32_t j = 0;j < MY_DISP_HOR_RES;j++)
+		{			
+			image_buffer[j][i] = 0xff;
+		}		
+	}
 }
 
 volatile bool disp_flush_enabled = true;
@@ -176,39 +185,78 @@ void disp_disable_update(void)
  *'lv_disp_flush_ready()' has to be called when finished.*/
 static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_p)
 {
-    if(disp_flush_enabled) {
-			
-			uint32_t width = area->x2 - area->x1 + 1;
-			uint32_t height = area->y2 - area->y1 + 1;
-			uint8_t temp[128];
-			uint8_t page_num = height / 8;
-			
-			for(uint32_t i = 0;i < page_num;i++)
+	if(disp_flush_enabled) {
+		
+		uint32_t width = area->x2 - area->x1 + 1;
+		uint32_t height = area->y2 - area->y1 + 1;
+		
+		
+		uint32_t top_line = 0;
+		if(area->y1 % 8 != 0)
+			top_line = 8 - (area->y1 % 8);
+		
+		uint32_t page = (height - top_line)/8;
+		
+		uint32_t bottom_line = height - 8*page - top_line;
+		
+		//填充内容
+		//top_line
+		for(int32_t j = top_line - 1;j >= 0;j--)			
+		{
+			for(uint32_t i = 0;i < width;i++)
 			{
-				//定位到页
-				LCD_Set_Pos(area->x1,area->y1 + 8 * i);
+				if(color_p->full)
+					image_buffer[area->x1 + i][area->y1 / 8] |= (0x80 >> j);
+				else
+					image_buffer[area->x1 + i][area->y1 / 8] &= ~(0x80 >> j);
 				
-				//填充页内容
-				for(uint32_t j = 0;j < 8;j++)
-				{
-					for(uint32_t k = 0;k < width;k++)
-					{
-						temp[k] = temp[k] >> 1;
-						if(color_p->full)
-						{							
-							temp[k] = temp[k] | 0x80;
-						}
-						color_p++;
-					}
-				}
-				
-				//写入一页
-				for(uint32_t j = 0;j < width;j++)
-				{
-					LCD_WrDat(temp[j]);
-				}
-				
+				color_p++;
 			}
+		}
+		
+		//page
+		for(int32_t j = 0;j < page;j++)			
+		{
+			for(int32_t k = 7;k >= 0;k--)			
+			{
+				for(uint32_t i = 0;i < width;i++)
+				{
+					if(color_p->full)
+						image_buffer[area->x1 + i][(area->y1 + top_line) / 8 + j] |= (0x80 >> k);
+					else
+						image_buffer[area->x1 + i][(area->y1 + top_line) / 8 + j] &= ~(0x80 >> k);
+					
+					color_p++;
+				}
+			}
+		}
+
+		//bottom_line
+		for(int32_t j = 0;j < bottom_line;j++)			
+		{
+			for(uint32_t i = 0;i < width;i++)
+			{
+				if(color_p->full)
+					image_buffer[area->x1 + i][area->y2 / 8] |= (0x01 << j);
+				else
+					image_buffer[area->x1 + i][area->y2 / 8] &= ~(0x01 << j);
+				
+				color_p++;
+			}
+		}
+			
+		
+		//写入整个图像
+		for(uint32_t i = 0;i < MY_DISP_VER_RES / 8;i++)
+		{
+			LCD_Set_Pos(0,8*i);
+			for(uint32_t j = 0;j < MY_DISP_HOR_RES;j++)
+			{			
+				LCD_WrDat(image_buffer[j][i]);
+			}		
+		}
+		
+	}
 			
 //        /*The most simple case (but also the slowest) to put all pixels to the screen one-by-one*/
 
@@ -221,7 +269,7 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
 //                color_p++;
 //            }
 //        }
-    }
+//    }
 
     /*IMPORTANT!!!
      *Inform the graphics library that you are ready with the flushing*/

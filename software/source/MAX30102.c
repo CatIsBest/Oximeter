@@ -8,7 +8,7 @@
 
 #include "MAX30102.h"
 #include "math.h"
-
+#include "GUI.h"
 
 /*******************************************************************************
  * Global variable definitions (declared in header file with 'extern')
@@ -184,6 +184,11 @@ static void MAX30102_Read_Fream(void)
   //read and clear status register
   MAX30102_Read_Reg(REG_INTR_STATUS_1,&reg_temp);
 	
+	if((reg_temp & 0x10) && (Get_Current_Screen() == SCREEN_STANDBY) && (!buffer_is_full))
+	{
+		Chang_to_Test();
+	}
+	
   if(reg_temp & 0x40)
 	{
 		uint16_t un_temp,red_data,ir_data;
@@ -194,7 +199,7 @@ static void MAX30102_Read_Fream(void)
 		I2C_Master_Transmit(DEVICE_ADDRESS,&address,1,TIMEOUT);
 		I2C_Master_Receive(DEVICE_ADDRESS,ach_i2c_data,6,TIMEOUT);
 		
-		if(!buffer_is_full)
+		if((Get_Current_Screen() != SCREEN_STANDBY) && (!buffer_is_full))
 		{
 			un_temp=ach_i2c_data[0];
 			un_temp<<=14;
@@ -402,7 +407,7 @@ void MAX30102_Init(void)
 	Max30102_reset();
 	
 	//Initialize MAX30102
-	MAX30102_Write_Reg(REG_INTR_ENABLE_1,0xc0);//// INTR setting
+	MAX30102_Write_Reg(REG_INTR_ENABLE_1,0xd0);//// INTR setting
 	MAX30102_Write_Reg(REG_INTR_ENABLE_2,0x00);//
 	MAX30102_Write_Reg(REG_FIFO_WR_PTR,0x00);//FIFO_WR_PTR[4:0]
 	MAX30102_Write_Reg(REG_OVF_COUNTER,0x00);//OVF_COUNTER[4:0]
@@ -416,6 +421,6 @@ void MAX30102_Init(void)
 	MAX30102_Write_Reg(REG_PILOT_PA,0x7f);// Choose value for ~ 25mA for Pilot LED
 	
 //	MAX30102_Write_Reg(REG_TEMP_CONFIG,0x01);// Enable Die Temperature
-//	MAX30102_Write_Reg(REG_PROX_INT_THRESH,0x80);// Set Proximity Interrupt Threshold
+	MAX30102_Write_Reg(REG_PROX_INT_THRESH,0x80);// Set Proximity Interrupt Threshold
 
 }

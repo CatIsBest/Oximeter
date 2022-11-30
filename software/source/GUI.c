@@ -1,7 +1,7 @@
 /*******************************************************************************
  * @file 	 		GUI.c
  * @author  	日常里的奇迹	@bilibili
- * @date    	2022-11-27
+ * @date    	2022-11-28
  * @brief			用户界面
 ********************************************************************************/
 
@@ -222,7 +222,7 @@ void Standby_Screen_Init(void)
 void Test_Screen_Init(void)
 {
 	lv_obj_t * new_scr = lv_obj_create(NULL);	
-	
+			
 	lv_obj_t * label_Wating = lv_label_create(new_scr);
 	lv_label_set_text(label_Wating,"measuring...");
 	lv_obj_center(label_Wating);
